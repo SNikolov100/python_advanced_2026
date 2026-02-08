@@ -1,68 +1,72 @@
-n = int(input())
-grid_space = []
-resource = set()
-meteor = set()
-ship = None
-planet_b = None
-units = 100
-
-
-maper = {
+direction ={
     "up": (-1, 0),
     "down": (1, 0),
-    "right": (0, 1),
-    "left": (0, -1)
+    "left": (0, -1),
+    "right": (0, 1)
 }
+
+def move_in_direction(r, c, curr_command):
+    rd, cd = direction[curr_command]
+    return r + rd, c + cd
+
+def is_valid_index(r, c, number):
+    return 0 <= r < number and 0 <= c < number
+
+
+old_position = None
+ship_position = None
+meteorites = set()
+resources = set()
+planet_b = None
+grid_space = []
+units = 100
+result = None
+n = int(input())
 
 for row in range(n):
     grid_space.append(input().split())
     for col in range(n):
         if grid_space[row][col] == "S":
-            ship = (row, col)
+            ship_position = (row, col)
+            grid_space[row][col] = "."
         elif grid_space[row][col] == "M":
-            meteor.add((row, col))
+            meteorites.add((row, col))
         elif grid_space[row][col] == "P":
             planet_b = (row, col)
         elif grid_space[row][col] == "R":
-            resource.add((row, col))
+            resources.add((row, col))
 
+old_position = ship_position
 while True:
-    direction = input()
-    r, c = ship
-    add_r, add_c = maper[direction]
-    new_row, new_col = r + add_r, c + add_c
-    if 0<= new_row < n and 0<= new_col < n:
-
-        if grid_space[r][c] != "R":
-            grid_space[r][c] = "."
-        if grid_space[new_row][new_col] != "R" and grid_space[new_row][new_col] != "P":
-            grid_space[new_row][new_col] = "S"
+    if units < 5:
+        result = "Mission failed! The spaceship was stranded in space."
+        break
+    command = input()
+    row, col = ship_position
+    if (row, col) not in resources:
+        old_position = (row, col)
+    row, col = move_in_direction(row, col, command)
+    units -= 5
+    if not is_valid_index(row, col, n):
+        ship_position = old_position
+        result = "Mission failed! The spaceship was lost in space."
+        break
+    ship_position = (row, col)
+    if (row, col) in resources:
+        units = min(100, units + 10)
+        continue
+    if (row, col) in meteorites:
         units -= 5
-
-        if (new_row, new_col) in meteor:
-            units -= 5
-            meteor.remove((new_row, new_col))
-            grid_space[new_row][new_col] = "."
-        elif (new_row, new_col) in resource:
-            units += 10
-            if units > 100:
-                units = 100
-
-        if (new_row, new_col) == planet_b:
-            print(f"Mission accomplished! The spaceship reached Planet B with {units} resources left.")
-            break
-
-        if units < 5:
-            print(f"Mission failed! The spaceship was stranded in space.")
-            break
-
-        ship = (new_row, new_col)
-    else:
-        grid_space[r][c] = "S"
-        print("Mission failed! The spaceship was lost in space.")
+        grid_space[row][col] = "."
+        meteorites.remove((row, col))
+        continue
+    if (row, col) == planet_b:
+        result = f"Mission accomplished! The spaceship reached Planet B with {units} resources left."
         break
 
-if ship == planet_b:
-    grid_space[ship[0]][ship[1]] = "P"
-for row in range(n):
-    print(f"{' '.join(x for x in grid_space[row])}")
+if ship_position != planet_b:
+    row, col = ship_position
+    grid_space[row][col] = "S"
+print(result)
+for row in grid_space:
+    print(' '.join(row))
